@@ -18,9 +18,9 @@ const OUT_DIR_ESM5_ABS = `${__dirname}/${OUT_DIR_ESM5}`;
 
 /* Package version */
 shell.echo(`Setup package version`);
-let version = config.version;
+const version = config.version;
 const versionContent = `export default '${version}';`;
-const versionFilePath = './src/ui-scroll.version.ts';
+const versionFilePath = `./src/ui-scroll.version.ts`;
 shell.touch(versionFilePath);
 shell.echo(versionContent).to(versionFilePath);
 shell.echo(chalk.green(`${PACKAGE} v${version}`));
@@ -95,10 +95,23 @@ shell.rm(`-Rf`, `${NPM_DIR}/src/**/*.js`);
 shell.rm(`-Rf`, `${NPM_DIR}/src/**/*.js.map`);
 shell.rm(`-Rf`, `${ESM2015_DIR}/src/**/*.d.ts`);
 
+/* TS getter/setter processing */
+// due to typescript 3.6 -> 3.7 breaking change:
+// https://github.com/microsoft/TypeScript/issues/33939
+shell.echo(`TS compatibility fixing`);
+shell.find(`./dist/src/`)
+  .filter(file => file.match(/\.d.ts$/))
+  .forEach(file => {
+    shell.sed(`-i`, /(\ *)set\ (.*)\((.*):\ (.*)\);/g, `$1$2: $4;`, file);
+    shell.sed(`-i`, /(\ *)get\ (.*)\(\):\ (.*);/g, `$1$2: $3;`, file);
+    shell.uniq(file, file);
+  });
+
 shell.cp(`-Rf`, [`package-dist.json`, `LICENSE`, `README.md`], `${NPM_DIR}`);
-fs.rename('./dist/package-dist.json', './dist/package.json', (err) => {
+fs.rename('./dist/package-dist.json', './dist/package.json', err => {
   if (err) {
     shell.echo(chalk.red(`Error: Renaming package-dist.json to package.json failed`));
+    shell.exit(1);
   }
 });
 
