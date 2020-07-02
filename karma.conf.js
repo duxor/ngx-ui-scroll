@@ -91,7 +91,7 @@ module.exports = function (config) {
               }
             ],
             exclude: [
-              /\.spec.ts/,
+              /tests/,
               /node_modules/
             ]
           }
